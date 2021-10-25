@@ -1,13 +1,11 @@
 package TASK.model;
 
-import TASK.client.Client;
-
 import java.util.ArrayList;
 import java.util.List;
 
 public class LocalChatRoom extends ChatRoom {
     private String owner;
-    private List<Client> clients = new ArrayList<>();
+    private List<String> members = new ArrayList<>();
 
     public String getOwner() {
         return owner;
@@ -17,19 +15,15 @@ public class LocalChatRoom extends ChatRoom {
         this.owner = owner;
     }
 
-    public synchronized void addMember(Client client) {
-        clients.add(client);
+    public synchronized void addMember(String client) {
+        members.add(client);
     }
 
-    public synchronized void removeMember(Client client) {
-        clients.remove(client);
+    public synchronized void removeMember(String client) {
+        members.remove(client);
     }
 
     public synchronized List<String> getMembers() {
-        List<String> members = new ArrayList<>();
-        for ( Client c : clients ){
-            members.add(c.getClientID());
-        }
         return members;
     }
 }

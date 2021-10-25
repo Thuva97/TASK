@@ -1,6 +1,6 @@
 package TASK.model;
 
-public class GlobalChatRoom extends ChatRoom {
+public class RemoteChatRoom extends ChatRoom {
 
     private String managingServer;
 

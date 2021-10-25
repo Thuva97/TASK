@@ -7,8 +7,6 @@ import TASK.server.ServerInfo;
 import TASK.model.ChatRoom;
 import TASK.model.LocalChatRoom;
 
-import java.time.Instant;
-import java.util.HashMap;
 import java.util.stream.Collectors;
 
 public class JSONBuilder {
@@ -92,7 +90,7 @@ public class JSONBuilder {
                 .map(ChatRoom::getChatRoomId)
                 .collect(Collectors.toCollection(JSONArray::new));
 
-        ja.addAll(ServerState.getInstance().getGlobalChatRooms().values().stream()
+        ja.addAll(ServerState.getInstance().getRemoteChatRooms().values().stream()
                 .map(ChatRoom::getChatRoomId)
                 .collect(Collectors.toList()));
 
@@ -119,155 +117,120 @@ public class JSONBuilder {
         return jj.toJSONString();
     }
 
-    // Server to server
-    public static JSONObject getElection(String source) {
-        // {"option": "election", "source": "s1"}
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("option", "election");
-        jsonObject.put("source", source);
-        return jsonObject;
+
+    public String notifyServerDownMessage(String serverId) {
+        // {"type":"notifyserverdown", "serverid":"s2"}
+        JSONObject jj = new JSONObject();
+        jj.put("type", "notifyserverdown");
+        jj.put("serverid", serverId);
+        return jj.toJSONString();
+    }
+    private final ServerInfo serverInfo = ServerState.getInstance().getServerInfo();
+
+    public String serverUpMessage() {
+        JSONObject jj = new JSONObject();
+        jj.put("type", "serverup");
+        jj.put("serverid", serverInfo.getServerId());
+        jj.put("address", serverInfo.getAddress());
+        jj.put("port", serverInfo.getClientPort());
+        jj.put("managementport", serverInfo.getServerPort());
+        return jj.toJSONString();
     }
 
-    //send who is leader
-    public static JSONObject getCoordinator(String leader) {
-        // {"option": "coordinator", "leader": "s3"}
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("option", "coordinator");
-        jsonObject.put("leader", leader);
-        return jsonObject;
+    public String startElectionMessage(String serverId, String serverAddress, Long serverPort, Long
+            serverManagementPort) {
+        JSONObject jj = new JSONObject();
+        jj.put("type", "startelection");
+        jj.put("serverid", serverId);
+        jj.put("address", serverAddress);
+        jj.put("port", String.valueOf(serverPort));
+        jj.put("managementport", String.valueOf(serverManagementPort));
+        return jj.toJSONString();
     }
 
-    //ok message
-    public static JSONObject getOk(String sender) {
-        // {"option": "ok", "sender": "s1"}
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("option", "ok");
-        jsonObject.put("sender", sender);
-        return jsonObject;
+    public String electionAnswerMessage(String serverId, String serverAddress, Integer serverPort, Integer
+            serverManagementPort) {
+        JSONObject jj = new JSONObject();
+        jj.put("type", "answerelection");
+        jj.put("serverid", serverId);
+        jj.put("address", serverAddress);
+        jj.put("port", String.valueOf(serverPort));
+        jj.put("managementport", String.valueOf(serverManagementPort));
+        return jj.toJSONString();
     }
 
-    //heart beat to leader
-    public static JSONObject getHeartbeat( String sender) {
-        // {"option": "heartbeat", "sender": "s1"}
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("option", "heartbeat");
-        jsonObject.put("sender", sender);
-        return jsonObject;
+    public String setCoordinatorMessage(String serverId, String serverAddress, Integer serverPort, Integer
+            serverManagementPort) {
+        JSONObject jj = new JSONObject();
+        jj.put("type", "coordinator");
+        jj.put("serverid", serverId);
+        jj.put("address", serverAddress);
+        jj.put("port", String.valueOf(serverPort));
+        jj.put("managementport", String.valueOf(serverManagementPort));
+        return jj.toJSONString();
     }
 
+    public String updateIdentityLeader(String serverId, String identity) {
 
+        JSONObject jj = new JSONObject();
+        jj.put("type", "updateIdentityLeader");
+        jj.put("identity", identity);
+        jj.put("serverid", serverId);
+        return jj.toJSONString();
+    }
 
+    public String updateIdentityConfirm(String approve) {
 
-    // Heartbeat
+        JSONObject jj = new JSONObject();
+        jj.put("type", "updateIdentityConfirm");
+        jj.put("approved", approve);
+        return jj.toJSONString();
+    }
 
-//    public String notifyServerDownMessage(String serverId) {
-//        // {"type":"notifyserverdown", "serverid":"s2"}
-//        JSONObject jj = new JSONObject();
-//        jj.put(Protocol.type.toString(), Protocol.notifyserverdown.toString());
-//        jj.put(Protocol.serverid.toString(), serverId);
-//        return jj.toJSONString();
-//    }
-//
-//    public String serverUpMessage() {
-//        JSONObject jj = new JSONObject();
-//        jj.put(Protocol.type.toString(), Protocol.serverup.toString());
-//        jj.put(Protocol.serverid.toString(), serverInfo.getServerId());
-//        jj.put(Protocol.address.toString(), serverInfo.getAddress());
-//        jj.put(Protocol.port.toString(), serverInfo.getPort());
-//        jj.put(Protocol.managementport.toString(), serverInfo.getManagementPort());
-//        return jj.toJSONString();
-//    }
-//
-//    public String startElectionMessage(String serverId, String serverAddress, Long serverPort, Long
-//            serverManagementPort) {
-//        JSONObject jj = new JSONObject();
-//        jj.put(Protocol.type.toString(), Protocol.startelection.toString());
-//        jj.put(Protocol.serverid.toString(), serverId);
-//        jj.put(Protocol.address.toString(), serverAddress);
-//        jj.put(Protocol.port.toString(), String.valueOf(serverPort));
-//        jj.put(Protocol.managementport.toString(), String.valueOf(serverManagementPort));
-//        return jj.toJSONString();
-//    }
-//
-//    public String electionAnswerMessage(String serverId, String serverAddress, Integer serverPort, Integer
-//            serverManagementPort) {
-//        JSONObject jj = new JSONObject();
-//        jj.put(Protocol.type.toString(), Protocol.answerelection.toString());
-//        jj.put(Protocol.serverid.toString(), serverId);
-//        jj.put(Protocol.address.toString(), serverAddress);
-//        jj.put(Protocol.port.toString(), String.valueOf(serverPort));
-//        jj.put(Protocol.managementport.toString(), String.valueOf(serverManagementPort));
-//        return jj.toJSONString();
-//    }
-//
-//    public String setCoordinatorMessage(String serverId, String serverAddress, Integer serverPort, Integer
-//            serverManagementPort) {
-//        JSONObject jj = new JSONObject();
-//        jj.put(Protocol.type.toString(), Protocol.coordinator.toString());
-//        jj.put(Protocol.serverid.toString(), serverId);
-//        jj.put(Protocol.address.toString(), serverAddress);
-//        jj.put(Protocol.port.toString(), String.valueOf(serverPort));
-//        jj.put(Protocol.managementport.toString(), String.valueOf(serverManagementPort));
-//        return jj.toJSONString();
-//    }
-//
-//    public String gossipMessage(String serverId, HashMap<String, Integer> heartbeatCountList) {
-//        // {"type":"gossip","serverid":"1","heartbeatcountlist":{"1":0,"2":1,"3":1,"4":2}}
-//        JSONObject jj = new JSONObject();
-//        jj.put(Protocol.type.toString(), Protocol.gossip.toString());
-//        jj.put(Protocol.serverid.toString(), serverId);
-//        jj.put(Protocol.heartbeatcountlist.toString(), heartbeatCountList);
-//        return jj.toJSONString();
-//    }
-//
-//    public String startVoteMessage(String serverId, String suspectServerId) {
-//        JSONObject jj = new JSONObject();
-//        jj.put(Protocol.type.toString(), Protocol.startvote.toString());
-//        jj.put(Protocol.serverid.toString(), serverId);
-//        jj.put(Protocol.suspectserverid.toString(), suspectServerId);
-//        return jj.toJSONString();
-//    }
-//
-//    public String answerVoteMessage(String suspectServerId, String vote, String votedBy){
-//        // {"type":"answervote","suspectserverid":"1","vote":"YES", "votedby":"1"}
-//        JSONObject jj = new JSONObject();
-//        jj.put(Protocol.type.toString(), Protocol.answervote.toString());
-//        jj.put(Protocol.suspectserverid.toString(), suspectServerId);
-//        jj.put(Protocol.votedby.toString(), votedBy);
-//        jj.put(Protocol.vote.toString(), vote);
-//        return jj.toJSONString();
-//    }
-//
-//    public String iAmUpMessage(String serverId, String serverAddress, Integer serverPort, Integer
-//            serverManagementPort) {
-//        // {"type":"iamup", "serverid":"1", "address":"localhost", "port":"4444", "managementport":"5555"}
-//        JSONObject jj = new JSONObject();
-//        jj.put(Protocol.type.toString(), Protocol.iamup.toString());
-//        jj.put(Protocol.serverid.toString(), serverId);
-//        jj.put(Protocol.address.toString(), serverAddress);
-//        jj.put(Protocol.port.toString(), String.valueOf(serverPort));
-//        jj.put(Protocol.managementport.toString(), String.valueOf(serverManagementPort));
-//        return jj.toJSONString();
-//    }
-//
-//    public String viewMessage(String coordinatorId, String coordinatorAddress, Integer coordinatorPort, Integer
-//            coordinatorManagementPort) {
-//        // {"type":"viewelection", "currentcoordinatorid":"1", "currentcoordinatoraddress":"localhost",
-//        //      "currentcoordinatorport":"4444", "currentcoordinatormanagementport":"5555"}
-//        JSONObject jj = new JSONObject();
-//        jj.put(Protocol.type.toString(), Protocol.viewelection.toString());
-//        jj.put(Protocol.currentcoordinatorid.toString(), coordinatorId);
-//        jj.put(Protocol.currentcoordinatoraddress.toString(), coordinatorAddress);
-//        jj.put(Protocol.currentcoordinatorport.toString(), String.valueOf(coordinatorPort));
-//        jj.put(Protocol.currentcoordinatormanagementport.toString(), String.valueOf(coordinatorManagementPort));
-//        return jj.toJSONString();
-//    }
-//
-//    public String nominationMessage() {
-//        JSONObject jj = new JSONObject();
-//        jj.put(Protocol.type.toString(), Protocol.nominationelection.toString());
-//        return jj.toJSONString();
-//    }
+    public String updateIdentityServer(String serverId, String identity) {
+
+        JSONObject jj = new JSONObject();
+        jj.put("type", "updateIdentityServer");
+        jj.put("identity", identity);
+        jj.put("serverid", serverId);
+        return jj.toJSONString();
+    }
+
+    public String updateRoomLeader(String serverId, String roomid) {
+
+        JSONObject jj = new JSONObject();
+        jj.put("type", "updateRoomLeader");
+        jj.put("roomid", roomid);
+        jj.put("serverid", serverId);
+        return jj.toJSONString();
+    }
+
+    public String updateRoomConfirm(String approve) {
+
+        JSONObject jj = new JSONObject();
+        jj.put("type", "updateRoomConfirm");
+        jj.put("approved", approve);
+        return jj.toJSONString();
+    }
+
+    public String updateRoomServer(String serverId, String roomid) {
+
+        JSONObject jj = new JSONObject();
+        jj.put("type", "updateRoomServer");
+        jj.put("roomid", roomid);
+        jj.put("serverid", serverId);
+        return jj.toJSONString();
+    }
+
+    public String createRoomResp(String roomId, String approved) {
+        //{"type" : "createroom", "roomid" : "jokes", "approved" : "false"}
+        JSONObject jj = new JSONObject();
+        jj.put("type", "createroom");
+        jj.put("roomid", roomId);
+        jj.put("approved", approved);
+        return jj.toJSONString();
+    }
+
 
 }
 
