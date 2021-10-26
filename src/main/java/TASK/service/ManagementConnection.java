@@ -21,7 +21,6 @@ public class ManagementConnection implements Runnable {
     private static final Logger logger = LogManager.getLogger(ManagementConnection.class);
     private BufferedReader reader;
     private BufferedWriter writer;
-    private ExecutorService pool;
     private JSONParser parser;
     ServerState serverState = ServerState.getInstance();
     private JSONBuilder messageBuilder;
@@ -35,7 +34,6 @@ public class ManagementConnection implements Runnable {
             this.reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), "UTF-8"));;
             this.writer = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream(), "UTF-8"));
             this.parser = new JSONParser();
-            this.pool = Executors.newSingleThreadExecutor();
             this.messageBuilder = JSONBuilder.getInstance();
             this.serverCommunication = new ServerCommunication();
         } catch (Exception e) {
@@ -149,7 +147,7 @@ public class ManagementConnection implements Runnable {
 
                     serverState.removeServer(serverId);
                     serverState.removeRemoteChatRoomsByServerId(serverId);
-//                    serverState.removeRemoteUserSessionsByServerId(serverId);
+                    serverState.removeRemoteClientsByServerId(serverId);
 
                     break;
 
@@ -168,6 +166,7 @@ public class ManagementConnection implements Runnable {
                             this.write(messageBuilder.updateIdentityConfirm("true"));
                             serverCommunication.relayPeers(messageBuilder.updateIdentityServer(serverId, requestUserId));
                         }
+                        break;
 
                 }
 
@@ -177,6 +176,7 @@ public class ManagementConnection implements Runnable {
                     String serverId = (String) jsonMessage.get("serverid");
 
                     serverState.getRemoteClients().put(requestUserId, new RemoteUserInfo(requestUserId, serverId));
+                    break;
                 }
 
                 else if (type.equalsIgnoreCase("updateRoomLeader")) {
@@ -195,6 +195,7 @@ public class ManagementConnection implements Runnable {
                         this.write(messageBuilder.updateRoomConfirm("true"));
                         serverCommunication.relayPeers(messageBuilder.updateRoomServer(serverId, requestRoomId));
                     }
+                    break;
 
                 }
 
@@ -207,8 +208,40 @@ public class ManagementConnection implements Runnable {
                     RC.setChatRoomId(requestRoomId);
                     RC.setManagingServer(serverId);
 
-                    serverState.getRemoteChatRooms().put(RC);
+                    serverState.getRemoteChatRooms().put(requestRoomId, RC);
+                    break;
                 }
+
+                else if (type.equalsIgnoreCase("deleteRoomLeader")) {
+
+                    String deletingRoomId = (String) jsonMessage.get("roomid");
+                    serverState.getRemoteChatRooms().remove(deletingRoomId);
+                    serverCommunication.relayPeers(messageBuilder.deleteRoomServer(deletingRoomId));
+                    break;
+                }
+
+                else if (type.equalsIgnoreCase("deleteRoomServer")) {
+
+                    String deletingRoomId = (String) jsonMessage.get("roomid");
+                    serverState.getRemoteChatRooms().remove(deletingRoomId);
+                    break;
+                }
+
+                else if (type.equalsIgnoreCase("deleteClientLeader")) {
+
+                    String deletingClientId = (String) jsonMessage.get("identity");
+                    serverState.getRemoteClients().remove(deletingClientId);
+                    serverCommunication.relayPeers(messageBuilder.deleteClientServer(deletingClientId));
+                    break;
+                }
+
+                else if (type.equalsIgnoreCase("deleteClientServer")) {
+
+                    String deletingClientId = (String) jsonMessage.get("identity");
+                    serverState.getRemoteClients().remove(deletingClientId);
+                    break;
+                }
+
 
 
 
@@ -216,15 +249,14 @@ public class ManagementConnection implements Runnable {
 
             }
 
-            pool.shutdown();
             clientSocket.close();
             writer.close();
             reader.close();
 
         } catch (IOException | ParseException e) {
             logger.trace(e.getMessage());
-            pool.shutdownNow();
         }
+
     }
 
     private void write(String msg) {

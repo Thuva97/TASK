@@ -59,14 +59,6 @@ public class JSONBuilder {
         return jj.toJSONString();
     }
 
-    public String deleteRoomPeers(String roomId) {
-        // {"type" : "deleteroom", "serverid" : "s1", "roomid" : "jokes"}
-        JSONObject jj = new JSONObject();
-        jj.put("type", "deleteroom");
-        jj.put("serverid", ServerState.getInstance().getServerInfo().getServerId());
-        jj.put("roomid", roomId);
-        return jj.toJSONString();
-    }
 
     public String who(String room) {
         JSONObject jj = new JSONObject();
@@ -114,6 +106,15 @@ public class JSONBuilder {
         jj.put("identity", identity);
         jj.put("former", former);
         jj.put("roomid", roomId);
+        return jj.toJSONString();
+    }
+
+    public String createRoomResp(String roomId, String approved) {
+        //{"type" : "createroom", "roomid" : "jokes", "approved" : "false"}
+        JSONObject jj = new JSONObject();
+        jj.put("type", "createroom");
+        jj.put("roomid", roomId);
+        jj.put("approved", approved);
         return jj.toJSONString();
     }
 
@@ -222,15 +223,37 @@ public class JSONBuilder {
         return jj.toJSONString();
     }
 
-    public String createRoomResp(String roomId, String approved) {
-        //{"type" : "createroom", "roomid" : "jokes", "approved" : "false"}
+    public String deleteRoomLeader(String roomid) {
+
         JSONObject jj = new JSONObject();
-        jj.put("type", "createroom");
-        jj.put("roomid", roomId);
-        jj.put("approved", approved);
+        jj.put("type", "deleteRoomLeader");
+        jj.put("roomid", roomid);
         return jj.toJSONString();
     }
 
+    public String deleteRoomServer(String roomid) {
+
+        JSONObject jj = new JSONObject();
+        jj.put("type", "deleteRoomServer");
+        jj.put("roomid", roomid);
+        return jj.toJSONString();
+    }
+
+    public String deleteClientLeader(String identity) {
+
+        JSONObject jj = new JSONObject();
+        jj.put("type", "deleteClientLeader");
+        jj.put("identity", identity);
+        return jj.toJSONString();
+    }
+
+    public String deleteClientServer(String identity) {
+
+        JSONObject jj = new JSONObject();
+        jj.put("type", "deleteClientServer");
+        jj.put("identity", identity);
+        return jj.toJSONString();
+    }
 
 }
 

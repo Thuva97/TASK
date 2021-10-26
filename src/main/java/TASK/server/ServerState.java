@@ -218,4 +218,13 @@ public class ServerState {
             }
         }
     }
+
+    public void removeRemoteClientsByServerId(String serverId) {
+        for (String entry : remoteClients.keySet()) {
+            RemoteUserInfo remoteClient = remoteClients.get(entry);
+            if (remoteClient.getManagingServer().equalsIgnoreCase(serverId)) {
+                remoteClients.remove(entry);
+            }
+        }
+    }
 }

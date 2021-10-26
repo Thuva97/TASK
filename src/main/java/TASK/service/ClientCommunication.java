@@ -3,11 +3,6 @@ package TASK.service;
 import TASK.model.UserInfo;
 import TASK.server.ServerState;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public class ClientCommunication {
@@ -24,6 +19,8 @@ public class ClientCommunication {
                 });
     }
 
+
+
 //    public static void write(Socket clientSocket, String message) {
 //        try {
 //            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8));
@@ -34,6 +31,18 @@ public class ClientCommunication {
 //        }
 //
 //    }
+
+    protected void broadcastMessageToRoom(String message, String room, String exceptUserId) {
+
+        Map<String, UserInfo> connectedClients = serverState.getConnectedClients();
+
+        connectedClients.values().stream()
+                .filter(client -> client.getCurrentChatRoom().equalsIgnoreCase(room))
+                .filter(client -> !client.getIdentity().equalsIgnoreCase(exceptUserId))
+                .forEach(client -> {
+                    client.getManagingThread().write(message);
+                });
+    }
 
 
 
