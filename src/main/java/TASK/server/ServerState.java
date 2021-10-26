@@ -6,10 +6,13 @@ import TASK.model.RemoteUserInfo;
 import TASK.model.UserInfo;
 import TASK.service.ServerPriorityComparator;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.rmi.Remote;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -48,24 +51,9 @@ public class ServerState {
         return instance;
     }
 
-    public synchronized void initServerState(String serverId) {
-        serverInfo = serverInfoMap.get(serverId);
-/*
-        serverInfo = serverInfoList.stream()
-                .filter(e -> e.getServerId().equalsIgnoreCase(serverId))
-                .findFirst()
-                .get();
-*/
-    }
 
     public synchronized ServerInfo getServerInfoById(String serverId) {
         return serverInfoMap.get(serverId);
-/*
-        return serverInfoList.stream()
-                .filter(e -> e.getServerId().equalsIgnoreCase(serverId))
-                .findFirst()
-                .get();
-*/
     }
 
     public synchronized ServerInfo getServerInfo() {
@@ -85,13 +73,6 @@ public class ServerState {
         return new ArrayList<>(subordinateServerInfoMap.values());
     }
 
-    public synchronized void setServerInfoList(List<ServerInfo> serverInfoList) {
-        //this.serverInfoList = serverInfoList;
-        for (ServerInfo serverInfo : serverInfoList) {
-            addServer(serverInfo);
-        }
-    }
-
     public synchronized void addServer(ServerInfo serverInfo) {
         ServerInfo me = getServerInfo();
         if (null != serverInfo) {
@@ -105,20 +86,6 @@ public class ServerState {
             serverInfoMap.put(serverInfo.getServerId(), serverInfo);
         }
 
-
-/*
-        for (int i = 0; i < serverInfoList.size(); i++) {
-            ServerInfo s = serverInfoList.get(i);
-            if (s.getServerId().equalsIgnoreCase(serverInfo.getServerId())) {
-                logger.info("Server " + serverInfo.getServerId() + " already exist.");
-            } else {
-                if (!Objects.equals(s.getPort(), serverInfo.getPort())) {
-                    logger.info("Adding server " + serverInfo.getServerId() + " to server list.");
-                    serverInfoList.add(serverInfo);
-                }
-            }
-        }
-*/
     }
 
     public synchronized void setupConnectedServers() {
@@ -178,10 +145,6 @@ public class ServerState {
     }
 
 
-    public boolean isOngoingElection() {
-        return ongoingElection.get();
-    }
-
     public void setOngoingElection(boolean ongoingElection) {
         this.ongoingElection.set(ongoingElection);
     }
@@ -227,4 +190,33 @@ public class ServerState {
             }
         }
     }
+    public void initializeWithConfigs(String serverID, String serverConfPath) {
+        serverInfo.setServerId(serverID);
+        try {
+            File conf = new File(serverConfPath); // read configuration
+            Scanner myReader = new Scanner(conf);
+            while (myReader.hasNextLine()) {
+                String data = myReader.nextLine();
+                String[] params = data.split(" ");
+                if (params[0].equals(serverID)) {
+                    serverInfo.setAddress(params[1]);
+                    serverInfo.setPort(Integer.parseInt(params[2]));
+                    serverInfo.setManagementPort(Integer.parseInt(params[3]));
+                }
+                // add all servers to hash map
+                ServerInfo s = new ServerInfo((params[0]),params[1],
+                        Integer.parseInt(params[3]),
+                        Integer.parseInt(params[2])
+                );
+                serverInfoMap.put(s.getServerId(), s);
+            }
+            myReader.close();
+
+        } catch (FileNotFoundException e) {
+            System.out.println("Configs file not found");
+            e.printStackTrace();
+        }
+
+    }
+
 }

@@ -78,9 +78,7 @@ public class JSONBuilder {
         JSONObject jj = new JSONObject();
         jj.put("type", "roomlist");
 
-        JSONArray ja = ServerState.getInstance().getLocalChatRooms().values().stream()
-                .map(ChatRoom::getChatRoomId)
-                .collect(Collectors.toCollection(JSONArray::new));
+        JSONArray ja = new JSONArray();
 
         ja.addAll(ServerState.getInstance().getRemoteChatRooms().values().stream()
                 .map(ChatRoom::getChatRoomId)
@@ -254,6 +252,8 @@ public class JSONBuilder {
         jj.put("identity", identity);
         return jj.toJSONString();
     }
+
+
 
 }
 
