@@ -79,11 +79,13 @@ public class ManagementConnection implements Runnable {
 
                         // start a new election among the servers that have a higher priority
                         if (!serverState.getOngoingElection()) {
-                            new BullyElection()
-                                    .startElection(serverState.getServerInfo(), serverState.getCandidateServerInfoList());
 
                             new BullyElection()
                                     .startWaitingForAnswerMessage(serverState.getServerInfo(), serverState.getElectionAnswerTimeout());
+                            new BullyElection()
+                                    .startElection(serverState.getServerInfo(), serverState.getCandidateServerInfoList());
+
+
                         }
 
                     }

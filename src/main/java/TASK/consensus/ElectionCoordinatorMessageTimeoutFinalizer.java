@@ -18,11 +18,13 @@ public class ElectionCoordinatorMessageTimeoutFinalizer implements Job, Interrup
         if (!interrupted.get()) {
             // no coordinator message was received from a higher priority server
             // therefore restart the election
-            new BullyElection()
-                    .startElection(serverState.getServerInfo(), serverState.getCandidateServerInfoList());
 
             new BullyElection()
                     .startWaitingForAnswerMessage(serverState.getServerInfo(), serverState.getElectionAnswerTimeout());
+            new BullyElection()
+                    .startElection(serverState.getServerInfo(), serverState.getCandidateServerInfoList());
+
+
         }
 
     }

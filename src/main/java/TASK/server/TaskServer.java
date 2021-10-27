@@ -69,10 +69,11 @@ public class TaskServer {
 
     private void initiateCoordinator() {
         System.out.println("Starting initial coordinator election...");
-        new BullyElection().startElection(serverState.getServerInfo(), serverState.getCandidateServerInfoList());
 
         new BullyElection().startWaitingForAnswerMessage(serverState.getServerInfo(),
                         serverState.getElectionAnswerTimeout());
+
+        new BullyElection().startElection(serverState.getServerInfo(), serverState.getCandidateServerInfoList());
 
 
     }

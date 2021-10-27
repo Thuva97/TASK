@@ -35,7 +35,6 @@ public class ServerCommunication {
             final int timeOut = (int) TimeUnit.SECONDS.toMillis(7);
             final Socket shortKet = (Socket) socketfactory.createSocket();
             shortKet.connect(address, timeOut);
-            System.out.println(serverInfo.getServerId());
             shortKet.close();
         } catch (IOException e) {
             //e.printStackTrace();
