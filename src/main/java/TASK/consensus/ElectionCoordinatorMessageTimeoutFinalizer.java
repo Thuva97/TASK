@@ -18,7 +18,6 @@ public class ElectionCoordinatorMessageTimeoutFinalizer implements Job, Interrup
         if (!interrupted.get()) {
             // no coordinator message was received from a higher priority server
             // therefore restart the election
-
             new BullyElection()
                     .startElection(serverState.getServerInfo(), serverState.getCandidateServerInfoList());
 
@@ -26,20 +25,13 @@ public class ElectionCoordinatorMessageTimeoutFinalizer implements Job, Interrup
                     .startWaitingForAnswerMessage(serverState.getServerInfo(), serverState.getElectionAnswerTimeout());
         }
 
-/*
-        try {
-            jobExecutionContext.getScheduler().deleteJob(jobExecutionContext.getJobDetail().getKey());
-        } catch (SchedulerException e) {
-            logger.error("Unable to delete the job from scheduler : " + e.getLocalizedMessage());
-        }
-*/
     }
 
     @Override
     public void interrupt() throws UnableToInterruptJobException {
-        logger.debug("Job was interrupted...");
+        System.out.println("Job was interrupted...");
         interrupted.set(true);
     }
 
-    private static final Logger logger = LogManager.getLogger(ElectionCoordinatorMessageTimeoutFinalizer.class);
+//    private static final Logger logger = LogManager.getLogger(ElectionCoordinatorMessageTimeoutFinalizer.class);
 }

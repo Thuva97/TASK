@@ -38,6 +38,7 @@ public class ServerState {
         connectedClients = new ConcurrentHashMap<>();
         localChatRooms = new ConcurrentHashMap<>();
         remoteChatRooms = new ConcurrentHashMap<>();
+        remoteClients = new ConcurrentHashMap<>();
         serverInfoMap = new ConcurrentHashMap<>();
         candidateServerInfoMap = new ConcurrentSkipListMap<>(new ServerPriorityComparator());
         subordinateServerInfoMap = new ConcurrentHashMap<>();
@@ -148,6 +149,9 @@ public class ServerState {
     public void setOngoingElection(boolean ongoingElection) {
         this.ongoingElection.set(ongoingElection);
     }
+    public boolean getOngoingElection() {
+         return this.ongoingElection.get();
+    }
 
     public ConcurrentMap<String, UserInfo> getConnectedClients() {
         return connectedClients;
@@ -191,13 +195,16 @@ public class ServerState {
         }
     }
     public void initializeWithConfigs(String serverID, String serverConfPath) {
+        serverInfo= new ServerInfo();
         serverInfo.setServerId(serverID);
         try {
             File conf = new File(serverConfPath); // read configuration
             Scanner myReader = new Scanner(conf);
             while (myReader.hasNextLine()) {
                 String data = myReader.nextLine();
-                String[] params = data.split(" ");
+                String[] params = data.split("\t");
+//                for (String e : params){System.out.println(e);}
+
                 if (params[0].equals(serverID)) {
                     serverInfo.setAddress(params[1]);
                     serverInfo.setPort(Integer.parseInt(params[2]));
@@ -205,8 +212,8 @@ public class ServerState {
                 }
                 // add all servers to hash map
                 ServerInfo s = new ServerInfo((params[0]),params[1],
-                        Integer.parseInt(params[3]),
-                        Integer.parseInt(params[2])
+                        Integer.parseInt(params[2]),
+                        Integer.parseInt(params[3])
                 );
                 serverInfoMap.put(s.getServerId(), s);
             }

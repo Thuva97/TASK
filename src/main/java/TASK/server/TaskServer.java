@@ -6,8 +6,10 @@ import TASK.model.LocalChatRoom;
 import TASK.model.RemoteChatRoom;
 import TASK.service.*;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+//import org.apache.logging.log4j.Level;
+//import org.apache.logging.log4j.LogManager;
+//import org.apache.logging.log4j.Logger;
+//import org.apache.logging.log4j.spi.LoggerContext;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -15,6 +17,7 @@ import org.json.simple.parser.ParseException;
 import org.quartz.*;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -29,23 +32,20 @@ public class TaskServer {
     private static long election_answer_timeout = 10;
     private static long election_coordinator_timeout = 10;
 
-    public TaskServer(String[] args) {
+    public TaskServer() {
         try {
             Scanner scanner = new Scanner(System.in);
             String serverID = scanner.nextLine();  // Read user input
 
-            ServerState.getInstance().initializeWithConfigs(serverID, args[1]);
-
-            logger.info("Reading server config");
-            serverState.initializeWithConfigs(serverID,args[1]);
+            System.out.println("Reading server config");
+            serverState.initializeWithConfigs(serverID,"./src/main/java/TASK/config/server.txt");
 
 
             serverState.setElectionAnswerTimeout(election_answer_timeout);
             serverState.setElectionCoordinatorTimeout(election_coordinator_timeout);
 
             serverState.setupConnectedServers();
-
-
+            serverInfo = serverState.getServerInfo();
 
             mainHall = "MainHall-" + serverInfo.getServerId();
             LocalChatRoom localChatRoomInfo = new LocalChatRoom();
@@ -63,13 +63,12 @@ public class TaskServer {
 
 
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            System.out.println(e.getMessage());
         }
     }
 
     private void initiateCoordinator() {
-        logger.debug("Starting initial coordinator election...");
-
+        System.out.println("Starting initial coordinator election...");
         new BullyElection().startElection(serverState.getServerInfo(), serverState.getCandidateServerInfoList());
 
         new BullyElection().startWaitingForAnswerMessage(serverState.getServerInfo(),
@@ -99,7 +98,7 @@ public class TaskServer {
             scheduler.scheduleJob(aliveJob, aliveTrigger);
 
         } catch (SchedulerException e) {
-            logger.error(e.getLocalizedMessage());
+            System.out.println(e.getLocalizedMessage());
         }
     }
 
@@ -110,7 +109,7 @@ public class TaskServer {
             servicePool.execute(new ClientService(serverInfo.getClientPort(), CLIENT_SOCKET_POOL));
             servicePool.execute(new ManagementService(serverInfo.getServerPort(), serverState.getServerInfoList().size()));
         } catch (IOException e) {
-            logger.trace(e.getMessage());
+            System.out.println(e.getMessage());
             servicePool.shutdown();
         }
     }
@@ -121,12 +120,12 @@ public class TaskServer {
         JSONParser parser = new JSONParser();
 
         for (ServerInfo server : serverState.getServerInfoList()) {
-            if (server.equals(this.serverInfo)) continue;
-
+            if (server.getServerId().equals(serverState.getServerInfo().getServerId())) continue;
             if (serverCommunication.isOnline(server)) {
+
                 // send main hall
                 serverCommunication.commPeer(server, messageBuilder.serverUpMessage());
-                serverCommunication.commPeer(server, messageBuilder.updateRoomLeader(serverInfo.getServerId() , this.mainHall));
+                serverCommunication.commPeer(server, messageBuilder.updateRoomServer(serverInfo.getServerId(), this.mainHall));
 
 
                 // accept theirs
@@ -166,5 +165,5 @@ public class TaskServer {
 
     private static final int SERVER_SOCKET_POOL = 2;
     private static final int CLIENT_SOCKET_POOL = 100;
-    private static final Logger logger = LogManager.getLogger(TaskServer.class);
+//    private static final Logger logger = LogManager.getLogger(TaskServer.class);
 }

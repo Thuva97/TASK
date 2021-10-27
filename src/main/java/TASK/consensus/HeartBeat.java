@@ -12,7 +12,7 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
 public class HeartBeat implements Job {
-    private static final Logger logger = LogManager.getLogger(HeartBeat.class);
+//    private static final Logger logger = LogManager.getLogger(HeartBeat.class);
     private ServerState serverState = ServerState.getInstance();
     private JSONBuilder messageBuilder = JSONBuilder.getInstance();
     private ServerCommunication serverCommunication = new ServerCommunication();
@@ -22,7 +22,7 @@ public class HeartBeat implements Job {
 
         if (null != serverState.getCoordinator()) {
             // let it put in trace for now, bec take debug as default dev mode
-            logger.trace("Current coordinator is : " + serverState.getCoordinator().getServerId());
+            System.out.println("Current coordinator is : " + serverState.getCoordinator().getServerId());
         }
 
         for (ServerInfo serverInfo : serverState.getServerInfoList()) {
@@ -50,16 +50,19 @@ public class HeartBeat implements Job {
                     // if the offline server is the coordinator, start the election process
                     if (null != serverState.getCoordinator() && serverInfo.getServerId().equalsIgnoreCase(serverState
                             .getCoordinator().getServerId())) {
+                        System.out.println("dsadasdassssssssssssssssssssssssssssssssssssssssssssssssssssssssss");
                         // send the start election message to every server with a higher priority
-                        new BullyElection().startElection(serverState.getServerInfo(),
+                        if (!serverState.getOngoingElection()) {
+                            new BullyElection().startElection(serverState.getServerInfo(),
                                     serverState.getCandidateServerInfoList());
 
-                        new BullyElection().startWaitingForAnswerMessage(
+                            new BullyElection().startWaitingForAnswerMessage(
                                     serverState.getServerInfo(), serverState.getElectionAnswerTimeout());
+                        }
 
                     }
                     serverCommunication.relayPeers(messageBuilder.notifyServerDownMessage(serverId));
-                    logger.debug("Notify server " + serverId + " down. Removing...");
+                    System.out.println("Notify server " + serverId + " down. Removing...");
 
                     serverState.removeServer(serverId);
                     serverState.removeRemoteChatRoomsByServerId(serverId);

@@ -16,7 +16,7 @@ import java.util.concurrent.Executors;
 
 public class ManagementService implements Runnable {
 
-    private static final Logger logger = LogManager.getLogger(ManagementService.class);
+//    private static final Logger logger = LogManager.getLogger(ManagementService.class);
     private final ServerSocket serverSocket;
     private final ExecutorService pool;
     private ServerState serverState = ServerState.getInstance();
@@ -33,7 +33,7 @@ public class ManagementService implements Runnable {
     public void run() {
         try {
 
-            logger.info("Server listening peer on management port "+ serverSocket.getLocalPort() +" for a connection...");
+            System.out.println("Server listening peer on management port "+ serverSocket.getLocalPort() +" for a connection...");
 
             while (!serverState.isStopRunning()) {
                 pool.execute(new ManagementConnection((Socket) serverSocket.accept()));

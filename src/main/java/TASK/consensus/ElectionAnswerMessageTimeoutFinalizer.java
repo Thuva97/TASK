@@ -21,23 +21,16 @@ public class ElectionAnswerMessageTimeoutFinalizer implements Job, Interruptable
                     serverState.getServerInfo(),
                     serverState.getSubordinateServerInfoList());
 
-            logger.debug("Election was finalized and the new leader is : " + serverState.getServerInfo().getServerId());
+            System.out.println("Election was finalized and the new leader is : " + serverState.getServerInfo().getServerId());
         }
 
-/*
-        try {
-            jobExecutionContext.getScheduler().deleteJob(jobExecutionContext.getJobDetail().getKey());
-        } catch (SchedulerException e) {
-            logger.error("Unable to delete the job from scheduler : " + e.getLocalizedMessage());
-        }
-*/
     }
 
     @Override
     public void interrupt() throws UnableToInterruptJobException {
-        logger.debug("Job was interrupted...");
+        System.out.println("Job was interrupted...");
         interrupted.set(true);
     }
 
-    private static final Logger logger = LogManager.getLogger(ElectionAnswerMessageTimeoutFinalizer.class);
+//    private static final Logger logger = LogManager.getLogger(ElectionAnswerMessageTimeoutFinalizer.class);
 }

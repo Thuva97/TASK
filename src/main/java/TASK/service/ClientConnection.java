@@ -40,7 +40,7 @@ public class ClientConnection implements Runnable {
             this.serverCommunication = new ServerCommunication();
             this.clientCommunication = new ClientCommunication();
         } catch (Exception e) {
-            logger.trace(e.getMessage());
+            System.out.println(e.getMessage());
         }
     }
 
@@ -55,7 +55,7 @@ public class ClientConnection implements Runnable {
 
                 // convert received message to json object
                 JSONObject jsonMessage = (JSONObject) parser.parse(msg);
-                logger.debug("Receiving: " + msg);
+                System.out.println("Receiving: " + msg);
 
 
                 String type = (String) jsonMessage.get("type");
@@ -90,7 +90,7 @@ public class ClientConnection implements Runnable {
                             serverState.getConnectedClients().put(requestIdentity, userInfo);
                             serverState.getLocalChatRooms().get(mainHall).addMember(requestIdentity);
 
-                            logger.info("Client connected: " + requestIdentity);
+                            System.out.println("Client connected: " + requestIdentity);
 
                             //{"type" : "newidentity", "approved" : "true"}
                             this.write(messageBuilder.newIdentityResp("true"));
@@ -180,7 +180,7 @@ public class ClientConnection implements Runnable {
 
                             clientCommunication.broadcastMessageToRoom(messageBuilder.roomChange(former, joiningRoomId, userInfo.getIdentity()), former);
 
-                            logger.info(userInfo.getIdentity() + " has routed to server " + server.getServerId());
+                            System.out.println(userInfo.getIdentity() + " has routed to server " + server.getServerId());
                         }
 
                         // Either case, remove user from former room on this server memory
@@ -215,7 +215,7 @@ public class ClientConnection implements Runnable {
                     serverState.getConnectedClients().put(identity, userInfo);
                     serverState.getLocalChatRooms().get(roomId).addMember(identity);
 
-                    logger.info("Client connected: " + identity);
+                    System.out.println("Client connected: " + identity);
 
                     write(messageBuilder.serverChange("true", serverState.getServerInfo().getServerId()));
                     clientCommunication.broadcastMessageToRoom(messageBuilder.roomChange(former, roomId, userInfo.getIdentity()), roomId);
@@ -349,11 +349,11 @@ public class ClientConnection implements Runnable {
             clientSocket.close();
 
             if (userInfo != null) {
-                logger.info("Client disconnected: " + userInfo.getIdentity());
+                System.out.println("Client disconnected: " + userInfo.getIdentity());
             }
 
         } catch (Exception e) {
-            logger.debug(e.getMessage());
+            System.out.println(e.getMessage());
         } finally {
 
             if (!clientSocket.isClosed()) {
@@ -373,10 +373,10 @@ public class ClientConnection implements Runnable {
             writer.write(msg + "\n");
             writer.flush();
 
-            logger.trace("Message flush");
+            System.out.println("Message flush");
 
         } catch (IOException e) {
-            logger.trace(e.getMessage());
+            System.out.println(e.getMessage());
         }
     }
 
@@ -402,5 +402,5 @@ public class ClientConnection implements Runnable {
     }
 
 
-    private static final Logger logger = LogManager.getLogger(ClientConnection.class);
+//    private static final Logger logger = LogManager.getLogger(ClientConnection.class);
 }

@@ -14,7 +14,7 @@ import java.util.List;
 
 public class BullyElection {
 
-    private static final Logger logger = LogManager.getLogger(BullyElection.class);
+//    private static final Logger logger = LogManager.getLogger(BullyElection.class);
     protected JSONBuilder jsonBuilder;
     protected ServerCommunication serverCommunication;
     protected ServerState serverState;
@@ -28,7 +28,8 @@ public class BullyElection {
     }
 
     public void startElection(ServerInfo proposingCoordinator, List<ServerInfo> candidatesList) {
-        logger.debug("Starting election...");
+        System.out.println("Starting election...");
+        serverState.setOngoingElection(true);
         String proposingCoordinatorServerId = proposingCoordinator.getServerId();
         String proposingCoordinatorAddress = proposingCoordinator.getAddress();
         Long proposingCoordinatorPort = Long.valueOf(proposingCoordinator.getClientPort());
@@ -42,18 +43,18 @@ public class BullyElection {
     public void startWaitingTimer(String groupId, Long timeout, JobDetail jobDetail) {
         try {
 
-            logger.debug(String.format("Starting the waiting job [%s] : %s",
+            System.out.println(String.format("Starting the waiting job [%s] : %s",
                     scheduler.getSchedulerName(), jobDetail.getKey()));
 
             if (scheduler.checkExists(jobDetail.getKey())) {
 
-                logger.debug(String.format("Job get trigger again [%s]", jobDetail.getKey().getName()));
+                System.out.println(String.format("Job get trigger again [%s]", jobDetail.getKey().getName()));
                 scheduler.triggerJob(jobDetail.getKey());
 
             } else {
                 SimpleTrigger simpleTrigger =
                         (SimpleTrigger) TriggerBuilder.newTrigger()
-                                .withIdentity("ELECTION_TRIGGER", groupId)
+                                .withIdentity(jobDetail.getKey().getName(), groupId)
                                 .startAt(DateBuilder.futureDate(Math.toIntExact(timeout), DateBuilder.IntervalUnit.SECOND))
                                 .build();
 
@@ -63,11 +64,11 @@ public class BullyElection {
         } catch (ObjectAlreadyExistsException oe) {
 
             // FIX this is fine, bec, since trigger is there, we can safely trigger the job, again!
-            logger.debug(oe.getMessage());
+            System.out.println(oe.getMessage());
 
             try {
 
-                logger.debug(String.format("Job get trigger again [%s]", jobDetail.getKey().getName()));
+                System.out.println(String.format("Job get trigger again [%s]", jobDetail.getKey().getName()));
                 scheduler.triggerJob(jobDetail.getKey());
 
                 //System.err.println(Arrays.toString(scheduler.getTriggerKeys(GroupMatcher.anyGroup()).toArray()));
@@ -97,14 +98,14 @@ public class BullyElection {
     }
 
     public void replyAnswerForElectionMessage(ServerInfo requestingCandidate, ServerInfo me) {
-        logger.debug("Replying answer for the election start message from : " + requestingCandidate.getServerId());
+        System.out.println("Replying answer for the election start message from : " + requestingCandidate.getServerId());
         String electionAnswerMessage = jsonBuilder
                 .electionAnswerMessage(me.getServerId(), me.getAddress(), me.getClientPort(), me.getServerPort());
         serverCommunication.commPeerOneWay(requestingCandidate, electionAnswerMessage);
     }
 
     public void setupNewCoordinator(ServerInfo newCoordinator, List<ServerInfo> subordinateServerInfoList) {
-        logger.debug("Informing subordinates about the new coordinator...");
+        System.out.println("Informing subordinates about the new coordinator...");
         // inform subordinates about the new coordinator
         String newCoordinatorServerId = newCoordinator.getServerId();
         String newCoordinatorAddress = newCoordinator.getAddress();
@@ -122,7 +123,7 @@ public class BullyElection {
     public void acceptNewCoordinator(ServerInfo newCoordinator) {
         serverState.setCoordinator(newCoordinator);
         serverState.setOngoingElection(false);
-        logger.debug("Accepting new coordinator : " + newCoordinator.getServerId());
+        System.out.println("Accepting new coordinator : " + newCoordinator.getServerId());
     }
 
     public void stopWaitingTimer(JobKey jobKey) {
@@ -130,7 +131,7 @@ public class BullyElection {
             if (scheduler.checkExists(jobKey)) {
                 scheduler.interrupt(jobKey);
                 //scheduler.deleteJob(jobKey);
-                logger.debug(String.format("Job [%s] get interrupted from [%s]",
+                System.out.println(String.format("Job [%s] get interrupted from [%s]",
                         jobKey, scheduler.getSchedulerName()));
             }
         } catch (SchedulerException e) {
@@ -151,7 +152,7 @@ public class BullyElection {
     }
 
     public void stopElection(ServerInfo stoppingServer) {
-        logger.debug("Stopping election...");
+        System.out.println("Stopping election...");
         stopWaitingForAnswerMessage(stoppingServer);
         stopWaitingForCoordinatorMessage(stoppingServer);
     }

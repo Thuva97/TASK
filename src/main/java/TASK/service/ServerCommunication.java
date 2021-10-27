@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 public class ServerCommunication {
 
-    private static final Logger logger = LogManager.getLogger(ServerCommunication.class);
+//    private static final Logger logger = LogManager.getLogger(ServerCommunication.class);
     private final ServerState serverState = ServerState.getInstance();
     private final ServerInfo serverInfo = serverState.getServerInfo();
     private final JSONParser parser;
@@ -35,6 +35,7 @@ public class ServerCommunication {
             final int timeOut = (int) TimeUnit.SECONDS.toMillis(7);
             final Socket shortKet = (Socket) socketfactory.createSocket();
             shortKet.connect(address, timeOut);
+            System.out.println(serverInfo.getServerId());
             shortKet.close();
         } catch (IOException e) {
             //e.printStackTrace();
@@ -58,20 +59,20 @@ public class ServerCommunication {
             writer.write(message + "\n");
             writer.flush();
 
-            logger.trace("[S2S]Sending  : [" + server.getServerId()
+            System.out.println("[S2S]Sending  : [" + server.getServerId()
                     + "@" + server.getAddress() + ":" + server.getServerPort() + "] " + message);
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
             return reader.readLine();
 
         } catch (IOException ioe) {
-            logger.trace("Can't Connect: " + server.getServerId() + "@"
+            System.out.println("Can't Connect: " + server.getServerId() + "@"
                     + server.getAddress() + ":" + server.getServerPort());
         } finally {
             if (socket != null) {
                 try {
                     socket.close();
                 } catch (IOException e) {
-                    logger.trace("Unable to close the socket : " + e.getLocalizedMessage());
+                    System.out.println("Unable to close the socket : " + e.getLocalizedMessage());
                     try {
                         socket.close();
                     } catch (IOException ignored) {
@@ -107,18 +108,18 @@ public class ServerCommunication {
             writer.write(message + "\n");
             writer.flush();
 
-            logger.trace("[S2S]Sending  : [" + server.getServerId()
+            System.out.println("[S2S]Sending  : [" + server.getServerId()
                     + "@" + server.getAddress() + ":" + server.getServerPort() + "] " + message);
             writer.close();
         } catch (IOException ioe) {
-            logger.trace("Can't Connect: " + server.getServerId() + "@"
+            System.out.println("Can't Connect: " + server.getServerId() + "@"
                     + server.getAddress() + ":" + server.getServerPort());
         } finally {
             if (socket != null) {
                 try {
                     socket.close();
                 } catch (IOException e) {
-                    logger.trace("Unable to close the socket : " + e.getLocalizedMessage());
+                    System.out.println("Unable to close the socket : " + e.getLocalizedMessage());
                     try {
                         socket.close();
                     } catch (IOException ignored) {
@@ -146,10 +147,10 @@ public class ServerCommunication {
         try {
             jj = (JSONObject) parser.parse(resp);
         } catch (ParseException e) {
-            logger.trace("Unable to parse : " + e.getLocalizedMessage());
+            System.out.println("Unable to parse : " + e.getLocalizedMessage());
         }
         if (jj != null) {
-            logger.trace("[S2S]Receiving from leader wd ID: [" + leader.getServerId()
+            System.out.println("[S2S]Receiving from leader wd ID: [" + leader.getServerId()
                     + "@" + leader.getAddress() + ":" + leader.getServerPort() + "] " + jj.toJSONString());
             // {"type":"updateIdentityConfirm","approved":"false"}
             String status = (String) jj.get("approved");
@@ -183,7 +184,7 @@ public class ServerCommunication {
             writer.write(message + "\n");
             writer.flush();
 
-            logger.trace("[A52]Sending  : [" + server.getServerId()
+            System.out.println("[A52]Sending  : [" + server.getServerId()
                     + "@" + server.getAddress() + ":" + server.getServerPort() + "] " + message);
 
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
@@ -194,14 +195,14 @@ public class ServerCommunication {
 
         } catch (IOException ioe) {
             //ioe.printStackTrace();
-            logger.trace("[A52]Can't Connect: " + server.getServerId() + "@"
+            System.out.println("[A52]Can't Connect: " + server.getServerId() + "@"
                     + server.getAddress() + ":" + server.getServerPort());
         } finally {
             if (socket != null) {
                 try {
                     socket.close();
                 } catch (IOException e) {
-                    logger.trace("Unable to close the socket : " + e.getLocalizedMessage());
+                    System.out.println("Unable to close the socket : " + e.getLocalizedMessage());
                     try {
                         socket.close();
                     } catch (IOException ignored) {

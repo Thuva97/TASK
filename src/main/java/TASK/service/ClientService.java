@@ -29,7 +29,7 @@ public class ClientService implements Runnable {
     public void run() {
         try {
 
-            logger.info("Server listening client on port "+ serverSocket.getLocalPort() +" for a connection...");
+            System.out.println("Server listening client on port "+ serverSocket.getLocalPort() +" for a connection...");
 
             while (!serverState.isStopRunning()) {
                 pool.execute(new ClientConnection((Socket) serverSocket.accept()));
@@ -43,5 +43,5 @@ public class ClientService implements Runnable {
         }
     }
 
-    private static final Logger logger = LogManager.getLogger(ClientService.class);
+//    private static final Logger logger = LogManager.getLogger(ClientService.class);
 }

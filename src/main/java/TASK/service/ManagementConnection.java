@@ -18,7 +18,7 @@ import java.util.concurrent.Executors;
 
 public class ManagementConnection implements Runnable {
 
-    private static final Logger logger = LogManager.getLogger(ManagementConnection.class);
+//    private static final Logger logger = LogManager.getLogger(ManagementConnection.class);
     private BufferedReader reader;
     private BufferedWriter writer;
     private JSONParser parser;
@@ -37,7 +37,7 @@ public class ManagementConnection implements Runnable {
             this.messageBuilder = JSONBuilder.getInstance();
             this.serverCommunication = new ServerCommunication();
         } catch (Exception e) {
-            logger.trace(e.getMessage());
+            System.out.println(e.getMessage());
         }
     }
 
@@ -51,15 +51,17 @@ public class ManagementConnection implements Runnable {
 
                 // convert received message to json object
                 JSONObject jsonMessage = (JSONObject) parser.parse(msg);
-                logger.debug("[S2S]Receiving: " + msg);
-
-
                 String type = (String) jsonMessage.get("type");
+                System.out.println("[S2S]Receiving: " + msg);
+
+
+//                String type = (String) jsonMessage.get("type");
+//                System.out.println(type);
 
                 if (type.equalsIgnoreCase("startelection")) {
 
                     String potentialCandidateId = (String) jsonMessage.get("serverid");
-                    logger.debug("Received election msg from : " + potentialCandidateId);
+                    System.out.println("Received election msg from : " + potentialCandidateId);
                     String myServerId = serverState.getServerInfo().getServerId();
 
                     if (Integer.parseInt(myServerId) < Integer.parseInt(potentialCandidateId)) {
@@ -76,21 +78,23 @@ public class ManagementConnection implements Runnable {
                                 .replyAnswerForElectionMessage(potentialCandidate, serverState.getServerInfo());
 
                         // start a new election among the servers that have a higher priority
+                        if (!serverState.getOngoingElection()) {
+                            new BullyElection()
+                                    .startElection(serverState.getServerInfo(), serverState.getCandidateServerInfoList());
 
-                        new BullyElection()
-                                .startElection(serverState.getServerInfo(), serverState.getCandidateServerInfoList());
-
-                        new BullyElection()
-                                .startWaitingForAnswerMessage(serverState.getServerInfo(), serverState.getElectionAnswerTimeout());
+                            new BullyElection()
+                                    .startWaitingForAnswerMessage(serverState.getServerInfo(), serverState.getElectionAnswerTimeout());
+                        }
 
                     }
+                    break;
 
                 }
 
                 else if (type.equalsIgnoreCase("answerelection")){
                     // received an answer message from a higher priority server
                     // start waiting for the coordinator message
-                    logger.debug("Received answer from : " + jsonMessage.get("serverid"));
+                    System.out.println("Received answer from : " + jsonMessage.get("serverid"));
 
                     // since the answer message timeout is no longer needed, stop that timeout first
                     new BullyElection().stopWaitingForAnswerMessage(serverState.getServerInfo());
@@ -99,11 +103,12 @@ public class ManagementConnection implements Runnable {
                     new BullyElection().startWaitingForCoordinatorMessage(
                             serverState.getServerInfo(),
                             serverState.getElectionCoordinatorTimeout());
+                    break;
 
                 }
                 else if (type.equalsIgnoreCase("coordinator")) {
                     // stop its election
-                    logger.debug("Received coordinator from : " + jsonMessage.get("serverid"));
+                    System.out.println("Received coordinator from : " + jsonMessage.get("serverid"));
 
                     new BullyElection().stopElection(serverState.getServerInfo());
 
@@ -115,9 +120,9 @@ public class ManagementConnection implements Runnable {
                             Integer.parseInt((String) jsonMessage.get("managementport"));
                     ServerInfo newCoordinator = new ServerInfo(newCoordinatorId, newCoordinatorAddress, newCoordinatorPort,
                             newCoordinatorManagementPort);
-
+                    System.out.println("//////////////////////////////////////////////////////////////////////////////////////////////////////");
                     new BullyElection().acceptNewCoordinator(newCoordinator);
-                    logger.debug("Accepted new Coordinator : " + newCoordinatorId);
+                    break;
 
                 }
 
@@ -143,7 +148,7 @@ public class ManagementConnection implements Runnable {
 
                     String serverId = (String) jsonMessage.get("serverid");
 
-                    logger.debug("Server down notification received. Removing server: " + serverId);
+                    System.out.println("Server down notification received. Removing server: " + serverId);
 
                     serverState.removeServer(serverId);
                     serverState.removeRemoteChatRoomsByServerId(serverId);
@@ -254,7 +259,7 @@ public class ManagementConnection implements Runnable {
             reader.close();
 
         } catch (IOException | ParseException e) {
-            logger.trace(e.getMessage());
+            System.out.println(e.getMessage());
         }
 
     }
@@ -264,7 +269,7 @@ public class ManagementConnection implements Runnable {
             writer.write(msg + "\n");
             writer.flush();
         } catch (IOException e) {
-            logger.trace(e.getMessage());
+            System.out.println(e.getMessage());
         }
     }
 
