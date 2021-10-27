@@ -79,11 +79,14 @@ public class JSONBuilder {
         jj.put("type", "roomlist");
 
         JSONArray ja = new JSONArray();
+        ja.addAll(ServerState.getInstance().getLocalChatRooms().values().stream()
+                .map(ChatRoom::getChatRoomId)
+                .collect(Collectors.toList()));
 
         ja.addAll(ServerState.getInstance().getRemoteChatRooms().values().stream()
                 .map(ChatRoom::getChatRoomId)
                 .collect(Collectors.toList()));
-
+        System.out.println(ja.toString());
         jj.put("rooms", ja);
 
         return jj.toJSONString();

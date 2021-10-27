@@ -1,5 +1,7 @@
 package TASK.server;
 
+import TASK.consensus.AnswerMessageTimeout;
+import TASK.consensus.ElectionCoordinatorTimeout;
 import TASK.model.RemoteChatRoom;
 import TASK.model.LocalChatRoom;
 import TASK.model.RemoteUserInfo;
@@ -8,7 +10,6 @@ import TASK.service.ServerPriorityComparator;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.rmi.Remote;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,8 +31,8 @@ public class ServerState {
     private Map<String, ServerInfo> subordinateServerInfoMap;
     private ConcurrentMap<String, Integer> aliveMap;
     private AtomicBoolean stopRunning;
-    private Long electionAnswerTimeout;
-    private Long electionCoordinatorTimeout;
+    private ElectionCoordinatorTimeout electionCoordinatorTimeoutFinalizer;
+    private AnswerMessageTimeout answerMessageTimeoutFinalizer;
 
     private ServerState() {
         aliveMap = new ConcurrentHashMap<>();
@@ -113,7 +114,7 @@ public class ServerState {
     }
 
     public boolean isUserExisted(String userId) {
-        return connectedClients.containsKey(userId) || remoteChatRooms.containsKey(userId) ;
+        return connectedClients.containsKey(userId) || remoteClients.containsKey(userId) ;
     }
 
     public boolean isRoomExistedGlobally(String roomId) {
@@ -161,21 +162,6 @@ public class ServerState {
         return remoteClients;
     }
 
-    public Long getElectionAnswerTimeout() {
-        return electionAnswerTimeout;
-    }
-
-    public void setElectionAnswerTimeout(Long electionAnswerTimeout) {
-        this.electionAnswerTimeout = electionAnswerTimeout;
-    }
-
-    public Long getElectionCoordinatorTimeout() {
-        return electionCoordinatorTimeout;
-    }
-
-    public void setElectionCoordinatorTimeout(Long electionCoordinatorTimeout) {
-        this.electionCoordinatorTimeout = electionCoordinatorTimeout;
-    }
 
     public void removeRemoteChatRoomsByServerId(String serverId) {
         for (String entry : remoteChatRooms.keySet()) {
@@ -226,4 +212,19 @@ public class ServerState {
 
     }
 
+    public ElectionCoordinatorTimeout getElectionCoordinatorTimeoutFinalizer() {
+        return electionCoordinatorTimeoutFinalizer;
+    }
+
+    public void setElectionCoordinatorTimeoutFinalizer(ElectionCoordinatorTimeout electionCoordinatorTimeoutFinalizer) {
+        this.electionCoordinatorTimeoutFinalizer = electionCoordinatorTimeoutFinalizer;
+    }
+
+    public AnswerMessageTimeout getAnswerMessageTimeoutFinalizer() {
+        return answerMessageTimeoutFinalizer;
+    }
+
+    public void setAnswerMessageTimeoutFinalizer(AnswerMessageTimeout answerMessageTimeoutFinalizer) {
+        this.answerMessageTimeoutFinalizer = answerMessageTimeoutFinalizer;
+    }
 }

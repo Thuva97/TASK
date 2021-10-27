@@ -3,34 +3,26 @@ package TASK.server;
 import TASK.consensus.BullyElection;
 import TASK.consensus.HeartBeat;
 import TASK.model.LocalChatRoom;
-import TASK.model.RemoteChatRoom;
 import TASK.service.*;
 
-//import org.apache.logging.log4j.Level;
-//import org.apache.logging.log4j.LogManager;
-//import org.apache.logging.log4j.Logger;
-//import org.apache.logging.log4j.spi.LoggerContext;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import TASK.service.Scheduler;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.quartz.*;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class TaskServer {
+    private static final int SERVER_SOCKET_POOL = 2;
+    private static final int CLIENT_SOCKET_POOL = 100;
     private ServerState serverState = ServerState.getInstance();
     private ServerInfo serverInfo;
     private ExecutorService servicePool;
     private String mainHall;
     private static Integer alive_interval = 5;
     private static Integer alive_error_factor = 2;
-    private static long election_answer_timeout = 10;
-    private static long election_coordinator_timeout = 10;
 
     public TaskServer() {
         try {
@@ -41,8 +33,6 @@ public class TaskServer {
             serverState.initializeWithConfigs(serverID,"./src/main/java/TASK/config/server.txt");
 
 
-            serverState.setElectionAnswerTimeout(election_answer_timeout);
-            serverState.setElectionCoordinatorTimeout(election_coordinator_timeout);
 
             serverState.setupConnectedServers();
             serverInfo = serverState.getServerInfo();
@@ -68,13 +58,15 @@ public class TaskServer {
     }
 
     private void initiateCoordinator() {
-        System.out.println("Starting initial coordinator election...");
 
-        new BullyElection().startWaitingForAnswerMessage(serverState.getServerInfo(),
-                        serverState.getElectionAnswerTimeout());
+        if (!serverState.getOngoingElection()) {
+            serverState.setOngoingElection(true);
+            System.out.println("Starting initial coordinator election...");
 
-        new BullyElection().startElection(serverState.getServerInfo(), serverState.getCandidateServerInfoList());
+            new BullyElection().startWaitingForAnswerMessage();
 
+            new BullyElection().startElection(serverState.getServerInfo(), serverState.getCandidateServerInfoList());
+        }
 
     }
 
@@ -94,7 +86,7 @@ public class TaskServer {
                                     .withIntervalInSeconds(alive_interval).repeatForever())
                     .build();
 
-            Scheduler scheduler = Quartz.getInstance().getScheduler();
+            org.quartz.Scheduler scheduler = Scheduler.getInstance().getScheduler();
             scheduler.start();
             scheduler.scheduleJob(aliveJob, aliveTrigger);
 
@@ -162,9 +154,4 @@ public class TaskServer {
     }
 
 
-
-
-    private static final int SERVER_SOCKET_POOL = 2;
-    private static final int CLIENT_SOCKET_POOL = 100;
-//    private static final Logger logger = LogManager.getLogger(TaskServer.class);
 }

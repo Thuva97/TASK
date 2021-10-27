@@ -3,20 +3,20 @@ package TASK.consensus;
 import TASK.server.ServerState;
 
 public class ElectionCoordinatorTimeout extends Thread {
-    static boolean interrupt = false;
+    private boolean interrupt = false;
     ServerState serverState = ServerState.getInstance();
 
-    public static void setInterrupt(boolean interrupt) {
-        ElectionCoordinatorTimeout.interrupt = interrupt;
+    public void setInterrupt(boolean interrupt) {
+        this.interrupt = interrupt;
     }
 
     @Override
     public void run() {
         try {
-            Thread.sleep(10000);
+            Thread.sleep(5000);
             if(!interrupt){
                 new BullyElection()
-                        .startWaitingForAnswerMessage(serverState.getServerInfo(), serverState.getElectionAnswerTimeout());
+                        .startWaitingForAnswerMessage();
                 new BullyElection()
                         .startElection(serverState.getServerInfo(), serverState.getCandidateServerInfoList());
             }

@@ -4,8 +4,6 @@ import TASK.server.ServerInfo;
 import TASK.server.ServerState;
 import TASK.service.JSONBuilder;
 import TASK.service.ServerCommunication;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
@@ -50,14 +48,12 @@ public class HeartBeat implements Job {
                     // if the offline server is the coordinator, start the election process
                     if (null != serverState.getCoordinator() && serverInfo.getServerId().equalsIgnoreCase(serverState
                             .getCoordinator().getServerId())) {
-                        System.out.println("dsadasdassssssssssssssssssssssssssssssssssssssssssssssssssssssssss");
                         // send the start election message to every server with a higher priority
                         if (!serverState.getOngoingElection()) {
                             new BullyElection().startElection(serverState.getServerInfo(),
                                     serverState.getCandidateServerInfoList());
 
-                            new BullyElection().startWaitingForAnswerMessage(
-                                    serverState.getServerInfo(), serverState.getElectionAnswerTimeout());
+                            new BullyElection().startWaitingForAnswerMessage();
                         }
 
                     }

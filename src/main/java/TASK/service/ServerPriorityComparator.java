@@ -13,7 +13,7 @@ public class ServerPriorityComparator implements Comparator<String>, Serializabl
         if (null != server1 && null != server2) {
             Integer server1Id = Integer.parseInt(server1);
             Integer server2Id = Integer.parseInt(server2);
-            return server1Id - server2Id;
+            return server2Id - server1Id;
         }
         return 0;
     }

@@ -2,8 +2,6 @@ package TASK.service;
 
 import TASK.server.ServerInfo;
 import TASK.server.ServerState;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -17,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 
 public class ServerCommunication {
 
-//    private static final Logger logger = LogManager.getLogger(ServerCommunication.class);
     private final ServerState serverState = ServerState.getInstance();
     private final ServerInfo serverInfo = serverState.getServerInfo();
     private final JSONParser parser;
@@ -37,7 +34,6 @@ public class ServerCommunication {
             shortKet.connect(address, timeOut);
             shortKet.close();
         } catch (IOException e) {
-            //e.printStackTrace();
             online = false;
         }
         return online;
@@ -169,6 +165,14 @@ public class ServerCommunication {
     public void relayPeers(String jsonMessage) {
         relaySelectedPeers(serverState.getServerInfoList(), jsonMessage);
     }
+    public void relayPeersFromLeader(String jsonMessage, String serverid) {
+        relaySelectedPeersFromLeader(serverState.getServerInfoList(), jsonMessage, serverid);
+    }
+    public void relaySelectedPeersFromLeader(List<ServerInfo> selectedPeers, String jsonMessage, String serverid) {
+        selectedPeers.stream()
+                .filter(server -> !server.getServerId().equalsIgnoreCase(this.serverInfo.getServerId()) && !server.getServerId().equalsIgnoreCase(serverid))
+                .forEach(server -> commPeerOneWay(server, jsonMessage));
+    }
 
 
     public String commServerSingleResp(ServerInfo server, String message) {
@@ -193,7 +197,6 @@ public class ServerCommunication {
             return resp;
 
         } catch (IOException ioe) {
-            //ioe.printStackTrace();
             System.out.println("[A52]Can't Connect: " + server.getServerId() + "@"
                     + server.getAddress() + ":" + server.getServerPort());
         } finally {
@@ -212,14 +215,12 @@ public class ServerCommunication {
                 try {
                     writer.close();
                 } catch (IOException ignored) {
-                    // this exception does not affect the overall execution of the application
                 }
             }
             if (reader != null) {
                 try {
                     reader.close();
                 } catch (IOException ignored) {
-                    // this exception does not affect the overall execution of the application
                 }
             }
         }

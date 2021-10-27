@@ -5,20 +5,14 @@ import TASK.model.RemoteChatRoom;
 import TASK.model.RemoteUserInfo;
 import TASK.server.ServerInfo;
 import TASK.server.ServerState;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class ManagementConnection implements Runnable {
 
-//    private static final Logger logger = LogManager.getLogger(ManagementConnection.class);
     private BufferedReader reader;
     private BufferedWriter writer;
     private JSONParser parser;
@@ -55,16 +49,13 @@ public class ManagementConnection implements Runnable {
                 System.out.println("[S2S]Receiving: " + msg);
 
 
-//                String type = (String) jsonMessage.get("type");
-//                System.out.println(type);
-
                 if (type.equalsIgnoreCase("startelection")) {
 
                     String potentialCandidateId = (String) jsonMessage.get("serverid");
                     System.out.println("Received election msg from : " + potentialCandidateId);
                     String myServerId = serverState.getServerInfo().getServerId();
 
-                    if (Integer.parseInt(myServerId) < Integer.parseInt(potentialCandidateId)) {
+                    if (Integer.parseInt(myServerId) > Integer.parseInt(potentialCandidateId)) {
                         // tell the election requester that I have a higher priority than him
                         String potentialCandidateAddress = (String) jsonMessage.get("address");
                         Integer potentialCandidatePort = Integer.parseInt((String) jsonMessage.get("port"));
@@ -79,9 +70,9 @@ public class ManagementConnection implements Runnable {
 
                         // start a new election among the servers that have a higher priority
                         if (!serverState.getOngoingElection()) {
-
+                            serverState.setOngoingElection(true);
                             new BullyElection()
-                                    .startWaitingForAnswerMessage(serverState.getServerInfo(), serverState.getElectionAnswerTimeout());
+                                    .startWaitingForAnswerMessage();
                             new BullyElection()
                                     .startElection(serverState.getServerInfo(), serverState.getCandidateServerInfoList());
 
@@ -99,12 +90,10 @@ public class ManagementConnection implements Runnable {
                     System.out.println("Received answer from : " + jsonMessage.get("serverid"));
 
                     // since the answer message timeout is no longer needed, stop that timeout first
-                    new BullyElection().stopWaitingForAnswerMessage(serverState.getServerInfo());
+                    new BullyElection().stopWaitingForAnswerMessage();
 
                     // start waiting for the coordinator message
-                    new BullyElection().startWaitingForCoordinatorMessage(
-                            serverState.getServerInfo(),
-                            serverState.getElectionCoordinatorTimeout());
+                    new BullyElection().startWaitingForCoordinatorMessage();
                     break;
 
                 }
@@ -122,7 +111,6 @@ public class ManagementConnection implements Runnable {
                             Integer.parseInt((String) jsonMessage.get("managementport"));
                     ServerInfo newCoordinator = new ServerInfo(newCoordinatorId, newCoordinatorAddress, newCoordinatorPort,
                             newCoordinatorManagementPort);
-                    System.out.println("//////////////////////////////////////////////////////////////////////////////////////////////////////");
                     new BullyElection().acceptNewCoordinator(newCoordinator);
                     break;
 
@@ -171,7 +159,7 @@ public class ManagementConnection implements Runnable {
                         } else {
                             serverState.getRemoteClients().put(requestUserId, new RemoteUserInfo(requestUserId, serverId));
                             this.write(messageBuilder.updateIdentityConfirm("true"));
-                            serverCommunication.relayPeers(messageBuilder.updateIdentityServer(serverId, requestUserId));
+                            serverCommunication.relayPeersFromLeader(messageBuilder.updateIdentityServer(serverId, requestUserId), serverId);
                         }
                         break;
 
@@ -200,7 +188,7 @@ public class ManagementConnection implements Runnable {
                         RC.setManagingServer(serverId);
                         serverState.getRemoteChatRooms().put(requestRoomId, RC);
                         this.write(messageBuilder.updateRoomConfirm("true"));
-                        serverCommunication.relayPeers(messageBuilder.updateRoomServer(serverId, requestRoomId));
+                        serverCommunication.relayPeersFromLeader(messageBuilder.updateRoomServer(serverId, requestRoomId),serverId);
                     }
                     break;
 
@@ -260,8 +248,7 @@ public class ManagementConnection implements Runnable {
             writer.close();
             reader.close();
 
-        } catch (IOException | ParseException e) {
-            System.out.println(e.getMessage());
+        } catch (Exception e) {
         }
 
     }
@@ -275,7 +262,4 @@ public class ManagementConnection implements Runnable {
         }
     }
 
-    public Socket getClientSocket() {
-        return clientSocket;
-    }
 }

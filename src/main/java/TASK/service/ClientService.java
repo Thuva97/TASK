@@ -1,8 +1,6 @@
 package TASK.service;
 
 import TASK.server.ServerState;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import javax.net.ServerSocketFactory;
 import java.io.IOException;
@@ -43,5 +41,4 @@ public class ClientService implements Runnable {
         }
     }
 
-//    private static final Logger logger = LogManager.getLogger(ClientService.class);
 }

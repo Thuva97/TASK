@@ -5,15 +5,11 @@ import TASK.model.RemoteChatRoom;
 import TASK.model.UserInfo;
 import TASK.server.ServerInfo;
 import TASK.server.ServerState;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class ClientConnection implements Runnable {
 
@@ -127,13 +123,15 @@ public class ClientConnection implements Runnable {
                             serverState.getLocalChatRooms().put(requestRoomId, newRoom);
 
                             String former = userInfo.getCurrentChatRoom();
+                            this.write(messageBuilder.createRoomResp(requestRoomId, "true"));
+                            clientCommunication.broadcastMessageToRoom(messageBuilder.roomChange(former, requestRoomId, userInfo.getIdentity()), former);
                             serverState.getLocalChatRooms().get(former).removeMember(userInfo.getIdentity());
 
                             userInfo.setCurrentChatRoom(requestRoomId);
                             userInfo.setRoomOwner(true);
 
-                            this.write(messageBuilder.createRoomResp(requestRoomId, "true"));
-                            clientCommunication.broadcastMessageToRoom(messageBuilder.roomChange(former, userInfo.getCurrentChatRoom(), userInfo.getIdentity()), former);
+//                            this.write(messageBuilder.createRoomResp(requestRoomId, "true"));
+//                            clientCommunication.broadcastMessageToRoom(messageBuilder.roomChange(former, userInfo.getCurrentChatRoom(), userInfo.getIdentity()), former);
 
                         } else {
                             this.write(messageBuilder.createRoomResp(requestRoomId, "false"));
@@ -183,8 +181,10 @@ public class ClientConnection implements Runnable {
                             System.out.println(userInfo.getIdentity() + " has routed to server " + server.getServerId());
                         }
 
-                        // Either case, remove user from former room on this server memory
+                        // remove client from former room on this server
                         serverState.getLocalChatRooms().get(former).removeMember(userInfo.getIdentity());
+                        serverState.getConnectedClients().remove(userInfo.getIdentity());
+                        // remove client from local connected client list
                     }
 
                 }
@@ -203,6 +203,11 @@ public class ClientConnection implements Runnable {
                     userInfo.setSocket(clientSocket);
 
                     this.setUserInfo(userInfo);
+                    serverState.getRemoteClients().remove(identity); // remove from remote client of connecting server
+                    serverCommunication.commPeerOneWay(serverState.getCoordinator(), messageBuilder.deleteClientLeader(identity));
+                    // Delete client message to leader
+                    serverCommunication.leaderApproval(messageBuilder.updateIdentityLeader(serverState.getServerInfo().getServerId(), identity));
+                    // Update client message to leader
 
                     String roomId;
                     String mainHall = "MainHall-" + serverState.getServerInfo().getServerId();
@@ -264,7 +269,7 @@ public class ClientConnection implements Runnable {
                     // remove user from room
                     serverState.getLocalChatRooms().get(former).removeMember(userInfo.getIdentity());
 
-                    // follow delete room protocol if owner
+                    // delete room protocol if owner
                     if (userInfo.isRoomOwner()) {
 
                         LocalChatRoom deletingRoom = serverState.getLocalChatRooms().get(former);
@@ -274,7 +279,7 @@ public class ClientConnection implements Runnable {
                             UserInfo client = serverState.getConnectedClients().get(member);
                             client.setCurrentChatRoom(mainHall);
                             String message = messageBuilder.roomChange(deletingRoom.getChatRoomId(), mainHall, client.getIdentity());
-                            clientCommunication.broadcastMessageToRoom(message, deletingRoom.getChatRoomId());
+//                            clientCommunication.broadcastMessageToRoom(message, deletingRoom.getChatRoomId());
                             clientCommunication.broadcastMessageToRoom(message, mainHall);
                         }
 
@@ -300,6 +305,11 @@ public class ClientConnection implements Runnable {
 
                     this.write(messageBuilder.who(userInfo.getCurrentChatRoom()));
                 }
+                else if (type.equalsIgnoreCase("message")) {
+                    String content = (String) jsonMessage.get("content");
+                    clientCommunication.broadcastMessageToRoom(messageBuilder.message(userInfo.getIdentity(), content), userInfo.getCurrentChatRoom());
+                }
+
 
                 else if (jsonMessage == null) {
 
@@ -353,7 +363,7 @@ public class ClientConnection implements Runnable {
             }
 
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+
         } finally {
 
             if (!clientSocket.isClosed()) {
@@ -381,14 +391,6 @@ public class ClientConnection implements Runnable {
     }
 
 
-    public Socket getClientSocket() {
-        return clientSocket;
-    }
-
-    public UserInfo getUserInfo() {
-        return userInfo;
-    }
-
     public void setUserInfo(UserInfo userInfo) {
         this.userInfo = userInfo;
     }
@@ -401,6 +403,4 @@ public class ClientConnection implements Runnable {
         this.routed = routed;
     }
 
-
-//    private static final Logger logger = LogManager.getLogger(ClientConnection.class);
 }
