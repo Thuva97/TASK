@@ -1,5 +1,6 @@
 package TASK.service;
 
+import TASK.model.UserInfo;
 import TASK.server.ServerState;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -256,7 +257,41 @@ public class JSONBuilder {
         return jj.toJSONString();
     }
 
+    public String getUpdate() {
 
+        JSONObject jj = new JSONObject();
+        jj.put("type", "getUpdate");
+        return jj.toJSONString();
+    }
+
+    public String updateClientsChatrooms() {
+        JSONObject jj = new JSONObject();
+        jj.put("type", "updateClientsChatrooms");
+
+        JSONArray ja = new JSONArray();
+        ja.addAll(ServerState.getInstance().getLocalChatRooms().values().stream()
+                .map(ChatRoom::getChatRoomId)
+                .collect(Collectors.toList()));
+
+        ja.addAll(ServerState.getInstance().getRemoteChatRooms().values().stream()
+                .map(ChatRoom::getChatRoomId)
+                .collect(Collectors.toList()));
+        System.out.println(ja.toString());
+        jj.put("rooms", ja);
+
+        JSONArray ja1 = new JSONArray();
+        ja1.addAll(ServerState.getInstance().getConnectedClients().values().stream()
+                .map(UserInfo::getIdentity)
+                .collect(Collectors.toList()));
+
+        ja1.addAll(ServerState.getInstance().getConnectedClients().values().stream()
+                .map(UserInfo::getIdentity)
+                .collect(Collectors.toList()));
+
+        jj.put("clients", ja1);
+
+        return jj.toJSONString();
+    }
 
 }
 

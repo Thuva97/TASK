@@ -3,34 +3,57 @@ package TASK.server;
 import TASK.consensus.BullyElection;
 import TASK.consensus.HeartBeat;
 import TASK.model.LocalChatRoom;
+import TASK.model.RemoteChatRoom;
+import TASK.model.RemoteUserInfo;
 import TASK.service.*;
 
 import TASK.service.Scheduler;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.quartz.*;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
 
 public class TaskServer {
     private static final int SERVER_SOCKET_POOL = 2;
     private static final int CLIENT_SOCKET_POOL = 100;
-    private ServerState serverState = ServerState.getInstance();
-    private ServerInfo serverInfo;
-    private ExecutorService servicePool;
-    private String mainHall;
+    private static ServerState serverState = ServerState.getInstance();
+    private static ServerInfo serverInfo;
+    private static ExecutorService servicePool;
+    private static String mainHall;
     private static Integer alive_interval = 5;
     private static Integer alive_error_factor = 2;
 
-    public TaskServer() {
+    public static void main(String[] args) {
+
         try {
-            Scanner scanner = new Scanner(System.in);
-            String serverID = scanner.nextLine();  // Read user input
+
+
+            String serverID = null;
+            String configPath = null;
+            CmdLineValues values = new CmdLineValues();
+            CmdLineParser parser = new CmdLineParser(values);
+            try {
+                parser.parseArgument(args);
+                serverID = values.getServerid();
+                configPath = values.getConfigpath();
+            } catch (CmdLineException e) {
+                System.err.println("Error while parsing cmd line arguments: " + e.getLocalizedMessage());
+            }
+//            Scanner scanner = new Scanner(System.in);
+//            System.out.println("Enter server id");
+//            String serverID = scanner.nextLine();  // Read user input
 
             System.out.println("Reading server config");
-            serverState.initializeWithConfigs(serverID,"./src/main/java/TASK/config/server.txt");
+            serverState.initializeWithConfigs(serverID,configPath);
 
 
 
@@ -45,9 +68,14 @@ public class TaskServer {
 
             startUpConnections();
 
-            syncChatRooms();
-
             initiateCoordinator();
+
+            while (true) {
+                if (serverState.getCoordinator() != null ){
+                    sync();
+                    break;
+                }
+            }
 
             startHeartBeat();
 
@@ -57,7 +85,7 @@ public class TaskServer {
         }
     }
 
-    private void initiateCoordinator() {
+    private static void initiateCoordinator() {
 
         if (!serverState.getOngoingElection()) {
             serverState.setOngoingElection(true);
@@ -70,7 +98,7 @@ public class TaskServer {
 
     }
 
-    private void startHeartBeat() {
+    private static void startHeartBeat() {
         try {
 
             JobDetail aliveJob = JobBuilder.newJob(HeartBeat.class)
@@ -96,7 +124,7 @@ public class TaskServer {
     }
 
 
-    private void startUpConnections() {
+    private static void startUpConnections() {
         servicePool = Executors.newFixedThreadPool(SERVER_SOCKET_POOL);
         try {
             servicePool.execute(new ClientService(serverInfo.getClientPort(), CLIENT_SOCKET_POOL));
@@ -107,7 +135,7 @@ public class TaskServer {
         }
     }
 
-    private void syncChatRooms() {
+    private static void sync() {
         ServerCommunication serverCommunication = new ServerCommunication();
         JSONBuilder messageBuilder = JSONBuilder.getInstance();
         JSONParser parser = new JSONParser();
@@ -118,37 +146,43 @@ public class TaskServer {
 
                 // send main hall
                 serverCommunication.commPeer(server, messageBuilder.serverUpMessage());
-                serverCommunication.commPeer(server, messageBuilder.updateRoomServer(serverInfo.getServerId(), this.mainHall));
+                serverCommunication.commPeer(server, messageBuilder.updateRoomServer(serverInfo.getServerId(), mainHall));
 
 
                 // accept theirs
-//                String resp = serverCommunication.commServerSingleResp(server, messageBuilder.listRoomsClient());
-//                if (resp != null) {
-//                    try {
-//                        JSONObject jsonMessage = (JSONObject) parser.parse(resp);
-//                        logger.trace("syncChatRooms: " + jsonMessage.toJSONString());
-//                        JSONArray ja = (JSONArray) jsonMessage.get("rooms");
-//                        for (Object o : ja.toArray()) {
-//                            String room = (String) o;
-//                            if (serverState.isRoomExistedRemotely(room)) continue;
-//                            RemoteChatRoom remoteRoom = new RemoteChatRoom();
-//                            remoteRoom.setChatRoomId(room);
-//                            String serverId = server.getServerId();
-//                            if (room.startsWith("MainHall")) { // every server has MainHall-s* duplicated
-//                                String sid = room.split("-")[1];
-//                                if (!sid.equalsIgnoreCase(serverId)) {
-//                                    //serverId = sid; // Or skip
-//                                    continue;
-//                                }
-//                            }
-//                            remoteRoom.setManagingServer(serverId);
-//                            serverState.getRemoteChatRooms().put(room, remoteRoom);
-//                        }
-//                    } catch (ParseException e) {
-//                        //e.printStackTrace();
-//                        logger.trace(e.getMessage());
-//                    }
-//                }
+                String resp = serverCommunication.commServerSingleResp(server, messageBuilder.getUpdate());
+                if (resp != null) {
+                    try {
+                        JSONObject jsonMessage = (JSONObject) parser.parse(resp);
+                        JSONArray rooms = (JSONArray) jsonMessage.get("rooms");
+                        JSONArray clients = (JSONArray) jsonMessage.get("clients");
+                        String serverId = server.getServerId();
+
+                        for (Object o : clients.toArray()){
+                            String client = (String) o;
+                            if (serverState.isUserExistedRemotely(client)) continue;
+                            RemoteUserInfo remoteUserInfo = new RemoteUserInfo(client, serverId);
+                            serverState.getRemoteClients().put(client, remoteUserInfo);
+                        }
+
+                        for (Object o : rooms.toArray()) {
+                            String room = (String) o;
+                            if (serverState.isRoomExistedRemotely(room)) continue;
+                            RemoteChatRoom remoteRoom = new RemoteChatRoom();
+                            remoteRoom.setChatRoomId(room);
+                            if (room.startsWith("MainHall")) {
+                                String sid = room.split("-")[1];
+                                if (!sid.equalsIgnoreCase(serverId)) {
+                                    continue;
+                                }
+                            }
+                            remoteRoom.setManagingServer(serverId);
+                            serverState.getRemoteChatRooms().put(room, remoteRoom);
+                        }
+                    } catch (Exception e) {
+
+                    }
+                }
             }
         }
     }

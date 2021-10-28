@@ -117,6 +117,10 @@ public class ServerState {
         return connectedClients.containsKey(userId) || remoteClients.containsKey(userId) ;
     }
 
+    public boolean isUserExistedRemotely(String userId) {
+        return remoteClients.containsKey(userId);
+    }
+
     public boolean isRoomExistedGlobally(String roomId) {
         return localChatRooms.containsKey(roomId) || remoteChatRooms.containsKey(roomId);
     }

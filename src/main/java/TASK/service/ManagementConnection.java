@@ -237,8 +237,10 @@ public class ManagementConnection implements Runnable {
                     break;
                 }
 
+                else if (type.equalsIgnoreCase("getUpdate")){
+                    write(messageBuilder.updateClientsChatrooms());
 
-
+                }
 
 
 
