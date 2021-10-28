@@ -80,11 +80,15 @@ public class BullyElection {
     }
 
     public void stopWaitingForCoordinatorMessage() {
-        serverState.getElectionCoordinatorTimeoutFinalizer().setInterrupt(true);
+        if (serverState.getElectionCoordinatorTimeoutFinalizer() != null) {
+            serverState.getElectionCoordinatorTimeoutFinalizer().setInterrupt(true);
+        }
     }
 
     public void stopWaitingForAnswerMessage() {
-        serverState.getAnswerMessageTimeoutFinalizer().setInterrupt(true);
+        if (serverState.getAnswerMessageTimeoutFinalizer() != null) {
+            serverState.getAnswerMessageTimeoutFinalizer().setInterrupt(true);
+        }
     }
 
     public void stopElection(ServerInfo stoppingServer) {

@@ -7,7 +7,7 @@ public class CmdLineValues {
     private char serverid = '1';
 
     @Option(required=false, name="-p", aliases="--configpath", usage="Server port number")
-    private String configpath = "config.txt";
+    private String configpath = "src/main/java/TASK/config/server.txt";
 
     public String getServerid() {
         return String.valueOf(serverid);

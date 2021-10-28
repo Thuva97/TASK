@@ -148,6 +148,7 @@ public class ServerState {
     public synchronized void setCoordinator(ServerInfo coordinator) {
         addServer(coordinator);
         this.coordinator = coordinator;
+        System.out.println("coordinator changed");
     }
 
 
